@@ -39,24 +39,6 @@ def get_general_tags(image_id):
     }
     return tags
 
-
-# def on_ui_tabs():
-#     with gr.Blocks(analytics_enabled=False) as ui_component:
-#         with gr.Row():
-#             danbooru_id = gr.Textbox(label="Danbooru Post ID")
-#             output = gr.Textbox(label="General Tags", lines=5)
-#             submit_btn = gr.Button("Get Tags")
-
-#             def process_tags(id):
-#                 try:
-#                     tags = get_general_tags(id)
-#                     return tags
-#                 except ValueError as e:
-#                     return f"Error: {e}"
-
-#             submit_btn.click(fn=process_tags, inputs=[danbooru_id], outputs=[output])
-
-#         return [(ui_component, "Danbooru Tagger", "danbooru_tagger_tab")]
 def on_ui_tabs():
     with gr.Blocks(analytics_enabled=False) as ui_component:
         with gr.Row():
