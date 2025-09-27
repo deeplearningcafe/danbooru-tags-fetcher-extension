@@ -2,33 +2,36 @@ import modules.scripts as scripts
 import gradio as gr
 import requests
 
-def format_danbooru_tag(tag: str) -> str:
+def format_tag_string(tag_string: str) -> str:
     """
-    Format a Danbooru-style tag into more readable text.
-    
-    Transformations:
-    1. Replace underscores with spaces
-    2. Escape parentheses with backslashes
-    
+    Formats a space-separated Danbooru tag string into a comma-separated,
+    human-readable format in a highly optimized way.
+
+    This function avoids splitting the string into a list, which is slow.
+    Instead, it uses a chain of optimized `replace` calls. The order of
+    operations is critical:
+    1. Escape parentheses to prevent them from being misinterpreted.
+    2. Replace the space separators between tags with ", ".
+    3. Replace underscores within tags with spaces.
+
     Args:
-        tag (str): The original Danbooru tag
-        
+        tag_string (str): The raw, space-separated tag string.
+                          e.g., "1girl long_hair star_(symbol)"
+
     Returns:
-        str: The formatted tag
-    
-    Examples:
-        >>> format_danbooru_tag("looking_at_viewer")
-        'looking at viewer'
-        >>> format_danbooru_tag("star_(symbol)")
-        'star \(symbol\)'
+        str: A formatted, comma-separated string.
+             e.g., "1girl, long hair, star \(symbol\)"
     """
-    # Replace underscores with spaces
-    formatted_tag = tag.replace('_', ' ')
+    if pd.isna(tag_string) or not tag_string:
+        return ""
     
-    # Escape parentheses with backslashes
-    formatted_tag = formatted_tag.replace('(', r'\(').replace(')', r'\)')
-    
-    return formatted_tag
+    # The sequence of replacements is optimized for speed and correctness.
+    return (
+        tag_string.replace('(', r'\(')
+                  .replace(')', r'\)')
+                  .replace(' ', ', ')
+                  .replace('_', ' ')
+    )
 
 def get_general_tags(image_id, cookies:str=None):
     # URL for the Danbooru image post
@@ -42,10 +45,10 @@ def get_general_tags(image_id, cookies:str=None):
     data = response.json()
 
     # Step 3: Extract tags by categories
-    artist_tags = format_danbooru_tag(data["tag_string_artist"])
-    copyright_tags = format_danbooru_tag(data["tag_string_copyright"])
-    character_tags = format_danbooru_tag(data["tag_string_character"])
-    general_tags = format_danbooru_tag(data["tag_string_general"])
+    artist_tags = format_tag_string(data["tag_string_artist"])
+    copyright_tags = format_tag_string(data["tag_string_copyright"])
+    character_tags = format_tag_string(data["tag_string_character"])
+    general_tags = format_tag_string(data["tag_string_general"])
     
     # Step 4: Prepare the result as a dictionary
     tags = {
