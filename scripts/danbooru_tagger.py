@@ -22,7 +22,7 @@ def format_tag_string(tag_string: str) -> str:
         str: A formatted, comma-separated string.
              e.g., "1girl, long hair, star \(symbol\)"
     """
-    if pd.isna(tag_string) or not tag_string:
+    if not tag_string:
         return ""
     
     # The sequence of replacements is optimized for speed and correctness.
