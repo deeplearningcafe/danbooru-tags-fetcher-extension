@@ -31,9 +31,17 @@ or
 3.  Click the "Get Tags" button.
 4.  The extension will display the retrieved tags in the corresponding textboxes.
 
+### 403 error
+The 403 forbidden error seems to be caused by Cloudflare so we need to include the `cf_clearance` cookie in the request. To obtain it:
+1.  Browse to danbooru and complete the Cloudflare captcha (if it doesn't appear try to reload/browse the page until it does).
+2. Inspect the page by right clicking it and using the `inspect` or using F12 key.
+3. Go to Application, Cookies and click the danbooru cookie.
+4. Click the `cf_clearance` name and copy the cookie value that shows bellow, it is a long string.
+5. Paste the token in the `Danbooru Cloudflare clearance cookie` textbox.
+
 ## Dependencies
 
-This extension requires the `requests` and `beautifulsoup4` Python libraries.
+This extension requires the `requests` Python library.
 
 ## Contributing
 

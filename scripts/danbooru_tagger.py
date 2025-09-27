@@ -1,34 +1,51 @@
 import modules.scripts as scripts
 import gradio as gr
 import requests
-from bs4 import BeautifulSoup
 
-def get_general_tags(image_id):
-    # URL for the Danbooru image post
-    url = f"https://danbooru.donmai.us/posts/{image_id}"
+def format_danbooru_tag(tag: str) -> str:
+    """
+    Format a Danbooru-style tag into more readable text.
     
+    Transformations:
+    1. Replace underscores with spaces
+    2. Escape parentheses with backslashes
+    
+    Args:
+        tag (str): The original Danbooru tag
+        
+    Returns:
+        str: The formatted tag
+    
+    Examples:
+        >>> format_danbooru_tag("looking_at_viewer")
+        'looking at viewer'
+        >>> format_danbooru_tag("star_(symbol)")
+        'star \(symbol\)'
+    """
+    # Replace underscores with spaces
+    formatted_tag = tag.replace('_', ' ')
+    
+    # Escape parentheses with backslashes
+    formatted_tag = formatted_tag.replace('(', r'\(').replace(')', r'\)')
+    
+    return formatted_tag
+
+def get_general_tags(image_id, cookies:str=None):
+    # URL for the Danbooru image post
+    url = f"https://danbooru.donmai.us/posts/{image_id}.json"
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'} # Add User-Agent
+    cookies = {'cf_clearance': cookies}
     # Download the HTML content
-    response = requests.get(url)
+    response = requests.get(url, headers=headers, cookies=cookies)
     if response.status_code != 200:
         raise ValueError(f"Failed to retrieve the page. Status code: {response.status_code}")
-    
-    # Parse the HTML content
-    soup = BeautifulSoup(response.content, "html.parser")
-    
-    # Step 2: Define a helper function to extract tags from specific categories
-    def extract_tags(category_class):
-        category_tags = []
-        tag_list = soup.find("ul", class_=category_class)
-        if tag_list:
-            tags = tag_list.find_all("li", {"data-tag-name": True})
-            category_tags = [tag['data-tag-name'].replace("_", " ") for tag in tags]
-        return ", ".join(category_tags)
-    
+    data = response.json()
+
     # Step 3: Extract tags by categories
-    artist_tags = extract_tags("artist-tag-list")
-    copyright_tags = extract_tags("copyright-tag-list")
-    character_tags = extract_tags("character-tag-list")
-    general_tags = extract_tags("general-tag-list")
+    artist_tags = format_danbooru_tag(data["tag_string_artist"])
+    copyright_tags = format_danbooru_tag(data["tag_string_copyright"])
+    character_tags = format_danbooru_tag(data["tag_string_character"])
+    general_tags = format_danbooru_tag(data["tag_string_general"])
     
     # Step 4: Prepare the result as a dictionary
     tags = {
@@ -43,6 +60,7 @@ def on_ui_tabs():
     with gr.Blocks(analytics_enabled=False) as ui_component:
         with gr.Row():
             danbooru_id = gr.Textbox(label="Danbooru Post ID")
+            danbooru_cookie = gr.Textbox(label="Danbooru Cloudflare clearance cookie")
             submit_btn = gr.Button("Get Tags")
 
         with gr.Row():
@@ -54,16 +72,16 @@ def on_ui_tabs():
             general_tags_output = gr.Textbox(label="General Tags", lines=5)
 
 
-        def process_tags(id):
+        def process_tags(id, cookies):
             try:
-                tags = get_general_tags(id)
+                tags = get_general_tags(id, cookies)
                 return (tags.get("Artist Tags",[]), tags.get("Copyright Tags",[]), tags.get("Character Tags",[]), tags.get("General Tags",[]))
             except ValueError as e:
                 return ("Error: " + str(e), "", "", "")
 
         submit_btn.click(
             fn=process_tags,
-            inputs=[danbooru_id],
+            inputs=[danbooru_id, danbooru_cookie],
             outputs=[artist_tags_output, copyright_tags_output, character_tags_output, general_tags_output]
         )
 
