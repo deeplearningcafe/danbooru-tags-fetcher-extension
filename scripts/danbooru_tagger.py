@@ -1,6 +1,8 @@
 import modules.scripts as scripts
 import gradio as gr
-import requests
+from curl_cffi import requests
+
+SESSION = requests.Session(impersonate="chrome")
 
 def format_tag_string(tag_string: str) -> str:
     """
@@ -24,7 +26,7 @@ def format_tag_string(tag_string: str) -> str:
     """
     if not tag_string:
         return ""
-    
+
     # The sequence of replacements is optimized for speed and correctness.
     return (
         tag_string.replace('(', r'\(')
@@ -36,10 +38,10 @@ def format_tag_string(tag_string: str) -> str:
 def get_general_tags(image_id, cookies:str=None):
     # URL for the Danbooru image post
     url = f"https://danbooru.donmai.us/posts/{image_id}.json"
-    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'} # Add User-Agent
+    headers = None#{'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'} # Add User-Agent
     cookies = {'cf_clearance': cookies}
     # Download the HTML content
-    response = requests.get(url, headers=headers, cookies=cookies)
+    response = SESSION.get(url, headers=headers, cookies=cookies)
     if response.status_code != 200:
         raise ValueError(f"Failed to retrieve the page. Status code: {response.status_code}")
     data = response.json()
@@ -49,7 +51,7 @@ def get_general_tags(image_id, cookies:str=None):
     copyright_tags = format_tag_string(data["tag_string_copyright"])
     character_tags = format_tag_string(data["tag_string_character"])
     general_tags = format_tag_string(data["tag_string_general"])
-    
+
     # Step 4: Prepare the result as a dictionary
     tags = {
         "Artist Tags": artist_tags,
